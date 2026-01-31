@@ -1,0 +1,168 @@
+@baseURL=http://localhost:3000
+@accessToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsInVzZXJuYW1lIjoiY2luZWRlbGljZXMiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NTc1OTExODAsImV4cCI6MTc1NzU5NDc4MH0.-FTRUjri7J4rpvvZv0YMWx2G1593rSNBjsFMELf6Lpo
+
+### GET /recipes simple
+GET {{baseURL}}/recipes
+Content-Type: application/json
+
+### GET /recipes/:id
+GET {{baseURL}}/recipes/14
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+### GET /recipes avec paramètre de query 'invalid' ou 'all' (admin uniquement)
+GET {{baseURL}}/recipes?q=invalid
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+
+### DELETE /recipes/:id (admin uniquement)
+DELETE  {{baseURL}}/recipes/13
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+### GET /medias simple
+GET {{baseURL}}/medias
+Content-Type: : application/json
+
+### GET /medias avec paramètre query 'invalid' ou 'all' (admin uniquement)
+GET {{baseURL}}/medias?q=invalid
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+### GET /medias/:id
+GET {{baseURL}}/medias/2
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+### test de login d'un utilisateur existant (attention, celui là est admin)
+POST {{baseURL}}/users/login
+Content-Type: application/json
+
+{
+    "username": "cinedelices",
+    "password": "Gr0sGourmand2025"
+}
+
+### test d'enregistrement d'un nouvel utilisateur (role member par défaut)
+POST {{baseURL}}/users/register
+Content-Type: application/json
+
+{
+    "username": "JEsuis@1test",
+    "email": "gros.TEST@test.com",
+    "password": "gr0s@TEST",
+    "confirm": "gr0s@TEST"
+}
+
+### test de suppression d'un utilisateur (utilisateur connecté ET admin uniquement)
+DELETE {{baseURL}}/users/11
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+### test de soumission d'une recette avec image optionnelle (utilisateur connecté uniquement)
+POST {{baseURL}}/recipes
+Authorization: Bearer {{accessToken}}
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="title"
+
+Flammekueche
+--WebAppBoundary
+Content-Disposition: form-data; name="instructions"
+
+1 - Allumer son four...
+--WebAppBoundary
+Content-Disposition: form-data; name="time"
+
+45
+--WebAppBoundary
+Content-Disposition: form-data; name="difficulty"
+
+2
+--WebAppBoundary
+Content-Disposition: form-data; name="category"
+
+plat
+--WebAppBoundary
+Content-Disposition: form-data; name="ingredients"
+
+[{"id":1,"quantity":45,"unit":"ml"},{"id":2,"quantity":1,"unit":"pcs"}]
+--WebAppBoundary
+Content-Disposition: form-data; name="medias"
+
+[{"id":2}]
+--WebAppBoundary
+Content-Disposition: form-data; name="image_file"; filename="yummers.png"
+Content-Type: image/png
+
+< D:\Adam\Téléchargements\yummers.png
+--WebAppBoundary--
+
+
+
+### test de soumission update de recette existante 
+PATCH {{baseURL}}/recipes/1
+Authorization: Bearer {{accessToken}}
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="title"
+
+Kirschtorte
+--WebAppBoundary
+Content-Disposition: form-data; name="instructions"
+
+1- Eine Schwarzwälder Kirschtorte macht jemanden glücklich!!!
+--WebAppBoundary--
+
+
+### test de soumission create DES NOUVEAUX MEDIAS
+POST {{baseURL}}/medias
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{    
+    "title": "La truite peu oxygenée",
+    "description": "Une truite ne s'oxygenant que peu, par gêne simplement",
+    "category": "film"
+}
+
+### delete
+DELETE {{baseURL}}/medias/13
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+### update
+PATCH {{baseURL}}/medias/1
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+    "title": "Aux Nucléairess"
+}
+
+### GET /ingredients avec paramètre de query 'invalid' ou 'all' (admin uniquement)
+GET {{baseURL}}/ingredients?q=invalid
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+### GET /ingredients/:id
+GET {{baseURL}}/ingredients/19
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+### delete 
+DELETE {{baseURL}}/ingredients/19
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+### update 
+PATCH {{baseURL}}/ingredients/19
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+    "name":"gettecour"
+}
