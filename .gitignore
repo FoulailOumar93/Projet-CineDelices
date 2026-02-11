@@ -140,3 +140,5 @@ vite.config.ts.timestamp-*
 
 # Vite cache and dependency files
 .vite/
+# Sequelize generated client
+sequelize.client.js

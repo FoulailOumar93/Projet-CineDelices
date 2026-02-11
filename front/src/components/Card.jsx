@@ -51,7 +51,6 @@ const RECIPE_CATEGORY_UI = {
 const normalize = (v) =>
   v?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-/* récupération robuste de la catégorie média */
 const getMediaCategory = (item) =>
   item.category ||
   item.media_category ||
@@ -59,7 +58,6 @@ const getMediaCategory = (item) =>
   item.Media?.category ||
   null;
 
-/* mapping strict et volontaire */
 const mapMediaCategory = (raw) => {
   const c = normalize(raw);
 
@@ -129,8 +127,8 @@ function SingleCard({ item, type }) {
       to={link}
       className="group block bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition"
     >
-      {/* IMAGE */}
-      <div className="relative h-44 sm:h-52 lg:h-56 bg-gray-100 overflow-hidden">
+      {/* IMAGE 1:1 */}
+      <div className="relative aspect-square w-full bg-gray-100 overflow-hidden">
         {imageUrl ? (
           <img
             src={imageUrl}
