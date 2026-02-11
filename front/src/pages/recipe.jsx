@@ -13,9 +13,6 @@ const CATEGORY_UI = {
   boisson: { label: "Boisson", color: "bg-blue-100 text-blue-700" },
 };
 
-/* =========================
-   UI CONFIG — ŒUVRES
-========================= */
 const MEDIA_BADGE_UI = {
   film: { label: "Film", color: "bg-red-600 text-white" },
   serie: { label: "Série", color: "bg-blue-600 text-white" },
@@ -26,9 +23,6 @@ const MEDIA_BADGE_UI = {
 const normalize = (v) =>
   v?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-/* =========================
-   FRACTIONS PROPRES
-========================= */
 const formatQuantity = (value) => {
   if (value == null) return "";
   const map = {
@@ -58,9 +52,6 @@ export default function Recipe() {
   const BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const token = localStorage.getItem("token");
 
-  /* =========================
-     FETCH DATA
-  ========================= */
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -87,17 +78,11 @@ export default function Recipe() {
     fetchData();
   }, [id]);
 
-  /* =========================
-     DELETE
-  ========================= */
   const handleDelete = async () => {
     await api.deleteRecipe(id);
     navigate("/recipes");
   };
 
-  /* =========================
-     NAVIGATION
-  ========================= */
   const goPrev = () => {
     if (currentIndex > 0) {
       navigate(`/recipes/${allRecipes[currentIndex - 1].id}`);
@@ -128,7 +113,7 @@ export default function Recipe() {
     <main className="bg-[#FFFBEF] min-h-screen">
       <div className="max-w-5xl mx-auto px-4 py-8">
 
-        {/* IMAGE (OPTIONNELLE) */}
+        {/* IMAGE */}
         {recipeImg && (
           <div className="mb-6 max-w-md mx-auto">
             <div className="relative aspect-[4/3] md:aspect-square rounded-3xl overflow-hidden shadow">
@@ -138,25 +123,6 @@ export default function Recipe() {
                 className="absolute inset-0 w-full h-full object-cover"
               />
             </div>
-          </div>
-        )}
-
-        {/* ACTIONS — TOUJOURS VISIBLES SI CONNECTÉ */}
-        {token && (
-          <div className="flex justify-center gap-3 mb-6">
-            <button
-              onClick={() => setIsEditing(true)}
-              className="px-5 py-2 rounded-full bg-[#E8650A] text-white font-bold"
-            >
-              ✏️ Modifier
-            </button>
-
-            <button
-              onClick={() => setShowDelete(true)}
-              className="px-5 py-2 rounded-full bg-red-100 text-red-700 font-bold"
-            >
-              🗑 Supprimer
-            </button>
           </div>
         )}
 
@@ -180,9 +146,28 @@ export default function Recipe() {
         </div>
 
         {/* TITLE */}
-        <h1 className="text-3xl font-bold text-center text-[#E8650A] mb-4">
+        <h1 className="text-3xl font-bold text-center text-[#E8650A] mb-2">
           {recipe.title}
         </h1>
+
+        {/* ACTIONS SOUS LE TITRE */}
+        {token && (
+          <div className="flex justify-center gap-3 mt-4 mb-6">
+            <button
+              onClick={() => setIsEditing(true)}
+              className="px-5 py-2 rounded-full bg-[#E8650A] text-white font-bold"
+            >
+              ✏️ Modifier
+            </button>
+
+            <button
+              onClick={() => setShowDelete(true)}
+              className="px-5 py-2 rounded-full bg-red-100 text-red-700 font-bold"
+            >
+              🗑 Supprimer
+            </button>
+          </div>
+        )}
 
         {/* META */}
         <div className="flex justify-center gap-3 mb-6 text-sm">
@@ -241,86 +226,14 @@ export default function Recipe() {
           </table>
         </section>
 
-        {/* ŒUVRES ASSOCIÉES */}
-        <section>
-          <h2 className="text-2xl font-bold text-[#E8650A] mb-4">
-            🎬 Œuvres associées
-          </h2>
-
-          {medias.length === 0 ? (
-            <p className="italic text-gray-500">
-              Aucune œuvre associée à cette recette.
-            </p>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-              {medias.map((media) => {
-                const mediaImg = media.img_url
-                  ? media.img_url.startsWith("/img")
-                    ? `${BASE_URL}${media.img_url}`
-                    : `${BASE_URL}/img/${media.img_url}`
-                  : null;
-
-                const badge = MEDIA_BADGE_UI[normalize(media.category)];
-
-                return (
-                  <Link
-                    key={media.id}
-                    to={`/medias/${media.id}`}
-                    className="bg-white rounded-xl shadow hover:shadow-lg overflow-hidden"
-                  >
-                    <div className="relative aspect-square">
-  {mediaImg && (
-    <img
-      src={mediaImg}
-      alt={media.title}
-      className="absolute inset-0 w-full h-full object-cover"
-    />
-  )}
-
-                      {badge && (
-                        <span
-                          className={`absolute top-2 left-2 px-3 py-1 rounded-full text-xs font-bold ${badge.color}`}
-                        >
-                          {badge.label}
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="p-4 font-bold text-[#E8650A]">
-                      {media.title}
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          )}
-        </section>
       </div>
 
-      {/* MODALES */}
       <EditRecipe
         open={isEditing}
         recipe={recipe}
         onClose={() => setIsEditing(false)}
         onSaved={fetchData}
       />
-
-      {showDelete && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-xl text-center">
-            <p className="mb-4 font-bold">Supprimer cette recette ?</p>
-            <div className="flex gap-4">
-              <button onClick={() => setShowDelete(false)}>Annuler</button>
-              <button
-                onClick={handleDelete}
-                className="bg-red-600 text-white px-4 py-2 rounded"
-              >
-                Supprimer
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </main>
   );
 }
