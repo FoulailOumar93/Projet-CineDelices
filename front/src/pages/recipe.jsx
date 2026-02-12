@@ -150,7 +150,7 @@ export default function Recipe() {
           {recipe.title}
         </h1>
 
-        {/* ACTIONS SOUS LE TITRE */}
+        {/* ACTIONS */}
         {token && (
           <div className="flex justify-center gap-3 mt-4 mb-6">
             <button
@@ -226,6 +226,61 @@ export default function Recipe() {
           </table>
         </section>
 
+        {/* ŒUVRES ASSOCIÉES */}
+        <section>
+          <h2 className="text-2xl font-bold text-[#E8650A] mb-4">
+            🎬 Œuvres associées
+          </h2>
+
+          {medias.length === 0 ? (
+            <p className="italic text-gray-500">
+              Aucune œuvre associée à cette recette.
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+              {medias.map((media) => {
+                const mediaImg = media.img_url
+                  ? media.img_url.startsWith("/img")
+                    ? `${BASE_URL}${media.img_url}`
+                    : `${BASE_URL}/img/${media.img_url}`
+                  : null;
+
+                const badge =
+                  MEDIA_BADGE_UI[normalize(media.category)];
+
+                return (
+                  <Link
+                    key={media.id}
+                    to={`/medias/${media.id}`}
+                    className="bg-white rounded-xl shadow hover:shadow-lg overflow-hidden"
+                  >
+                    <div className="relative aspect-square">
+                      {mediaImg && (
+                        <img
+                          src={mediaImg}
+                          alt={media.title}
+                          className="absolute inset-0 w-full h-full object-cover"
+                        />
+                      )}
+
+                      {badge && (
+                        <span
+                          className={`absolute top-2 left-2 px-3 py-1 rounded-full text-xs font-bold ${badge.color}`}
+                        >
+                          {badge.label}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="p-4 font-bold text-[#E8650A]">
+                      {media.title}
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </section>
       </div>
 
       <EditRecipe
@@ -234,6 +289,27 @@ export default function Recipe() {
         onClose={() => setIsEditing(false)}
         onSaved={fetchData}
       />
+
+      {showDelete && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
+          <div className="bg-white p-6 rounded-xl text-center">
+            <p className="mb-4 font-bold">
+              Supprimer cette recette ?
+            </p>
+            <div className="flex gap-4 justify-center">
+              <button onClick={() => setShowDelete(false)}>
+                Annuler
+              </button>
+              <button
+                onClick={handleDelete}
+                className="bg-red-600 text-white px-4 py-2 rounded"
+              >
+                Supprimer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
