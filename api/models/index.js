@@ -1,106 +1,60 @@
-import dotenv from 'dotenv';
-dotenv.config();
+import { sequelize } from '../sequelize.client.js';
 
-import express from 'express';
-import cors from 'cors';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-/* =========================
-   DATABASE
-========================= */
-import { sequelize } from './models/index.js';
+import { Recipe } from './recipe.model.js';
+import { Media } from './media.model.js';
+import { Ingredient } from './ingredient.model.js';
+import { RecipeSeenIn } from './recipe_seen_in.model.js';
+import { RecipeHasIngredient } from './recipe_has_ingredient.model.js';
 
 /* =========================
-   ROUTERS
+   ASSOCIATIONS
 ========================= */
-import recipeRouter from './routers/recipe.router.js';
-import userRouter from './routers/user.router.js';
-import mediaRouter from './routers/media.router.js';
-import ingredientRouter from './routers/ingredient.router.js';
-import searchRouter from './routers/search.router.js';
 
 /* =========================
-   APP
+   RECIPES ↔ INGREDIENTS
 ========================= */
-const app = express();
 
-/* =========================
-   PATH FIX (ESM)
-========================= */
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+Recipe.belongsToMany(Ingredient, {
+  through: RecipeHasIngredient,
+  foreignKey: 'recipe_id',
+  otherKey: 'ingredient_id',
+  as: 'ingredients',
+});
 
-/* =========================
-   PORT
-========================= */
-const PORT = process.env.PORT || 3000;
-
-/* =========================
-   CORS
-========================= */
-app.use(
-  cors({
-    origin: true,
-    credentials: true,
-  }),
-);
-
-/* =========================
-   BODY PARSER
-========================= */
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-/* =========================
-   STATIC IMAGES
-========================= */
-app.use(
-  '/img',
-  express.static(path.join(__dirname, 'public', 'img')),
-);
-
-/* =========================
-   ROUTE TEST
-========================= */
-app.get('/', (req, res) => {
-  res.json({
-    message: '🎬 API CinéDélices en ligne',
-  });
+Ingredient.belongsToMany(Recipe, {
+  through: RecipeHasIngredient,
+  foreignKey: 'ingredient_id',
+  otherKey: 'recipe_id',
+  as: 'used_in_recipes',
 });
 
 /* =========================
-   ROUTES API
+   RECIPES ↔ MEDIAS
 ========================= */
-app.use('/recipes', recipeRouter);
-app.use('/users', userRouter);
-app.use('/medias', mediaRouter);
-app.use('/ingredients', ingredientRouter);
-app.use('/search', searchRouter);
 
-/* =========================
-   404 API
-========================= */
-app.use((req, res) => {
-  res.status(404).json({
-    error: 'Route API introuvable',
-    path: req.originalUrl,
-  });
+Recipe.belongsToMany(Media, {
+  through: RecipeSeenIn,
+  foreignKey: 'recipe_id',
+  otherKey: 'media_id',
+  as: 'seen_in_medias',
+});
+
+Media.belongsToMany(Recipe, {
+  through: RecipeSeenIn,
+  foreignKey: 'media_id',
+  otherKey: 'recipe_id',
+  as: 'seen_in_recipes',
 });
 
 /* =========================
-   DATABASE + SERVER
+   EXPORTS
 ========================= */
-sequelize
-  .sync({ alter: true })
-  .then(() => {
-    console.log('✅ Base de données synchronisée');
 
-    app.listen(PORT, () => {
-      console.log(`🚀 API démarrée sur le port ${PORT}`);
-      console.log(`🖼️ Images servies sur /img`);
-    });
-  })
-  .catch((error) => {
-    console.error('❌ Erreur base de données :', error);
-  });
+export {
+  sequelize,
+  Recipe,
+  Media,
+  Ingredient,
+  RecipeSeenIn,
+  RecipeHasIngredient,
+};
