@@ -2,7 +2,12 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { PiEye, PiEyeSlash } from "react-icons/pi";
 
-const Login = ({ open, onClose, onLoginSuccess, onSwitchToRegister }) => {
+const Login = ({
+  open,
+  onClose,
+  onLoginSuccess,
+  onSwitchToRegister,
+}) => {
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -19,7 +24,11 @@ const Login = ({ open, onClose, onLoginSuccess, onSwitchToRegister }) => {
   ========================= */
   useEffect(() => {
     if (open) {
-      setFormData({ identifier: "", password: "" });
+      setFormData({
+        identifier: "",
+        password: "",
+      });
+
       setError("");
       setShowPassword(false);
     }
@@ -30,6 +39,7 @@ const Login = ({ open, onClose, onLoginSuccess, onSwitchToRegister }) => {
   ========================= */
   const handleChange = (e) => {
     const { name, value } = e.target;
+
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -37,20 +47,25 @@ const Login = ({ open, onClose, onLoginSuccess, onSwitchToRegister }) => {
   };
 
   /* =========================
-     SUBMIT
+     SUBMIT LOGIN
   ========================= */
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     setError("");
     setLoading(true);
 
     try {
-      /* ========= LOGIN ========= */
-      const res = await fetch(
+      /* =========================
+         LOGIN REQUEST
+      ========================= */
+      const response = await fetch(
         `${import.meta.env.VITE_API_BASE_URL}/users/login`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+          },
           body: JSON.stringify({
             identifier: formData.identifier.trim(),
             password: formData.password,
@@ -58,21 +73,42 @@ const Login = ({ open, onClose, onLoginSuccess, onSwitchToRegister }) => {
         }
       );
 
-      if (!res.ok) {
-        throw new Error("Identifiants invalides");
+      /* =========================
+         RESPONSE JSON
+      ========================= */
+      const data = await response.json();
+
+      console.log("LOGIN RESPONSE :", data);
+
+      if (!response.ok) {
+        throw new Error(
+          data?.error ||
+            data?.message ||
+            "Erreur de connexion"
+        );
       }
 
-      const { token } = await res.json();
+      /* =========================
+         TOKEN
+      ========================= */
+      const token =
+        data.token ||
+        data.accessToken ||
+        data.jwt;
 
       if (!token) {
         throw new Error("Token manquant");
       }
 
-      /* ========= STOCK TOKEN ========= */
+      /* =========================
+         SAVE TOKEN
+      ========================= */
       localStorage.setItem("token", token);
 
-      /* ========= GET ME ========= */
-      const meRes = await fetch(
+      /* =========================
+         GET CURRENT USER
+      ========================= */
+      const meResponse = await fetch(
         `${import.meta.env.VITE_API_BASE_URL}/users/me`,
         {
           headers: {
@@ -81,25 +117,44 @@ const Login = ({ open, onClose, onLoginSuccess, onSwitchToRegister }) => {
         }
       );
 
-      if (!meRes.ok) {
-        throw new Error("Impossible de récupérer l’utilisateur");
+      const meData = await meResponse.json();
+
+      console.log("ME RESPONSE :", meData);
+
+      if (!meResponse.ok) {
+        throw new Error(
+          meData?.error ||
+            "Impossible de récupérer l'utilisateur"
+        );
       }
 
-      const me = await meRes.json();
+      /* =========================
+         SAVE USER
+      ========================= */
+      localStorage.setItem(
+        "me",
+        JSON.stringify(meData)
+      );
 
-      /* ========= STOCK USER ========= */
-      localStorage.setItem("me", JSON.stringify(me));
-
-      /* 🔥 LIGNE CRUCIALE — SYNCHRO REACT */
+      /* =========================
+         SYNC REACT
+      ========================= */
       window.dispatchEvent(new Event("storage"));
 
-      /* ========= CALLBACKS ========= */
-      onLoginSuccess?.(me);
+      /* =========================
+         CALLBACKS
+      ========================= */
+      onLoginSuccess?.(meData);
+
       onClose?.();
+
       navigate("/memberPage");
     } catch (err) {
-      console.error(err);
-      setError("Erreur de connexion");
+      console.error("LOGIN ERROR :", err);
+
+      setError(
+        err.message || "Erreur de connexion"
+      );
     } finally {
       setLoading(false);
     }
@@ -122,23 +177,30 @@ const Login = ({ open, onClose, onLoginSuccess, onSwitchToRegister }) => {
           ×
         </button>
 
+        {/* TITLE */}
         <h2 className="text-3xl font-bold text-[#3E2723] text-center mb-6">
           Connexion
         </h2>
 
+        {/* ERROR */}
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-2 rounded-lg text-center mb-4">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {/* FORM */}
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-4"
+        >
 
           {/* IDENTIFIER */}
           <div>
             <label className="block text-sm font-bold text-[#5D4037] mb-1 ml-1">
               Nom d'utilisateur / E-mail
             </label>
+
             <input
               type="text"
               name="identifier"
@@ -154,34 +216,52 @@ const Login = ({ open, onClose, onLoginSuccess, onSwitchToRegister }) => {
             <label className="block text-sm font-bold text-[#5D4037] mb-1 ml-1">
               Mot de passe
             </label>
+
             <div className="relative">
+
               <input
-                type={showPassword ? "text" : "password"}
+                type={
+                  showPassword
+                    ? "text"
+                    : "password"
+                }
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
                 required
                 className="w-full px-4 py-3 bg-[#FCF8F2] border rounded-xl focus:border-[#E8650A] focus:ring-1 focus:ring-[#E8650A]"
               />
+
               <button
                 type="button"
-                onClick={() => setShowPassword((v) => !v)}
+                onClick={() =>
+                  setShowPassword((prev) => !prev)
+                }
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
               >
-                {showPassword ? <PiEyeSlash size={20} /> : <PiEye size={20} />}
+                {showPassword ? (
+                  <PiEyeSlash size={20} />
+                ) : (
+                  <PiEye size={20} />
+                )}
               </button>
+
             </div>
           </div>
 
+          {/* BUTTON */}
           <button
             type="submit"
             disabled={loading}
             className="w-full bg-[#E8650A] text-white font-bold py-3 rounded-xl disabled:opacity-50"
           >
-            {loading ? "Connexion..." : "Connexion"}
+            {loading
+              ? "Connexion..."
+              : "Connexion"}
           </button>
         </form>
 
+        {/* REGISTER */}
         <div className="mt-6 text-center text-sm text-[#5D4037]">
           <p>
             Pas de compte ?{" "}
