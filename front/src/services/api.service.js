@@ -1,5 +1,5 @@
 /* ======================================================
-   API SERVICE – CINÉDÉLICES (COMPLET & FINAL)
+   API SERVICE – CINÉDÉLICES (COMPLET & STABLE)
 ====================================================== */
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -9,96 +9,176 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 ====================================================== */
 const getAuthHeaders = () => {
   const token = localStorage.getItem("token");
-  return token ? { Authorization: `Bearer ${token}` } : {};
+
+  return token
+    ? {
+        Authorization: `Bearer ${token}`,
+      }
+    : {};
 };
 
 /* ======================================================
    SAFE RESPONSE PARSER
 ====================================================== */
 const parseResponse = async (res) => {
-  const contentType = res.headers.get("content-type") || "";
+  const text = await res.text();
 
-  if (res.status === 204) return null;
+  /* =========================
+     EMPTY RESPONSE
+  ========================= */
+  if (!text) {
+    if (!res.ok) {
+      throw new Error("Erreur API");
+    }
 
+    return null;
+  }
+
+  /* =========================
+     JSON PARSE
+  ========================= */
+  let data;
+
+  try {
+    data = JSON.parse(text);
+  } catch {
+    data = text;
+  }
+
+  /* =========================
+     ERROR RESPONSE
+  ========================= */
   if (!res.ok) {
-    let payload = "Erreur API";
-    try {
-      if (contentType.includes("application/json")) {
-        const json = await res.json();
-        payload = json?.error || json?.message || JSON.stringify(json);
-      } else {
-        payload = await res.text();
-      }
-    } catch { /* empty */ }
-    throw new Error(payload);
+    throw new Error(
+      data?.error ||
+        data?.message ||
+        data ||
+        "Erreur API"
+    );
   }
 
-  if (contentType.includes("application/json")) {
-    return res.json();
-  }
-
-  return res.text();
+  return data;
 };
 
 /* ======================================================
    API
 ====================================================== */
 export const api = {
-  /* =========================
+  /* ======================================================
      AUTH
-  ========================= */
+  ====================================================== */
+
   login: async ({ identifier, password }) => {
-    const res = await fetch(`${BASE_URL}/users/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ identifier, password }),
-    });
+    const res = await fetch(
+      `${BASE_URL}/users/login`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          identifier,
+          password,
+        }),
+      }
+    );
 
     const data = await parseResponse(res);
-    localStorage.setItem("token", data.token);
 
-    const meRes = await fetch(`${BASE_URL}/users/me`, {
-      headers: { Authorization: `Bearer ${data.token}` },
-    });
+    console.log("LOGIN DATA :", data);
+
+    const token =
+      data?.token ||
+      data?.accessToken ||
+      data?.jwt;
+
+    if (!token) {
+      throw new Error("Token manquant");
+    }
+
+    localStorage.setItem("token", token);
+
+    /* =========================
+       GET CURRENT USER
+    ========================= */
+    const meRes = await fetch(
+      `${BASE_URL}/users/me`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
 
     const me = await parseResponse(meRes);
-    localStorage.setItem("me", JSON.stringify(me));
+
+    localStorage.setItem(
+      "me",
+      JSON.stringify(me)
+    );
+
     return me;
   },
 
-  register: async ({ username, password, email }) => {
-    const res = await fetch(`${BASE_URL}/users/register`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password, email }),
-    });
+  register: async ({
+    username,
+    password,
+    email,
+  }) => {
+    const res = await fetch(
+      `${BASE_URL}/users/register`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username,
+          password,
+          email,
+        }),
+      }
+    );
+
     return parseResponse(res);
   },
 
   getMe: async () => {
-    const res = await fetch(`${BASE_URL}/users/me`, {
-      headers: getAuthHeaders(),
-    });
+    const res = await fetch(
+      `${BASE_URL}/users/me`,
+      {
+        headers: getAuthHeaders(),
+      }
+    );
+
     return parseResponse(res);
   },
 
   updateMe: async (payload) => {
-    const res = await fetch(`${BASE_URL}/users/me`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        ...getAuthHeaders(),
-      },
-      body: JSON.stringify(payload),
-    });
+    const res = await fetch(
+      `${BASE_URL}/users/me`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders(),
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
     return parseResponse(res);
   },
 
   deleteMe: async () => {
-    const res = await fetch(`${BASE_URL}/users/me`, {
-      method: "DELETE",
-      headers: getAuthHeaders(),
-    });
+    const res = await fetch(
+      `${BASE_URL}/users/me`,
+      {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      }
+    );
+
     return parseResponse(res);
   },
 
@@ -107,63 +187,99 @@ export const api = {
     localStorage.removeItem("me");
   },
 
-  /* =========================
+  /* ======================================================
      SEARCH
-  ========================= */
-  search: async (query = "", sort = "recent") => {
+  ====================================================== */
+
+  search: async (
+    query = "",
+    sort = "recent"
+  ) => {
     const res = await fetch(
-      `${BASE_URL}/search?q=${encodeURIComponent(query)}&sort=${sort}`,
-      { headers: getAuthHeaders() }
+      `${BASE_URL}/search?q=${encodeURIComponent(
+        query
+      )}&sort=${sort}`,
+      {
+        headers: getAuthHeaders(),
+      }
     );
+
     return parseResponse(res);
   },
 
-  /* =========================
-     RECIPES (PUBLIC)
-  ========================= */
+  /* ======================================================
+     RECIPES
+  ====================================================== */
+
   getAllRecipes: async () => {
-    const res = await fetch(`${BASE_URL}/recipes`);
+    const res = await fetch(
+      `${BASE_URL}/recipes`
+    );
+
     return parseResponse(res);
   },
 
   getRecipeById: async (id) => {
-    const res = await fetch(`${BASE_URL}/recipes/${id}`);
+    const res = await fetch(
+      `${BASE_URL}/recipes/${id}`
+    );
+
     return parseResponse(res);
   },
 
   createRecipe: async (formData) => {
-    const res = await fetch(`${BASE_URL}/recipes`, {
-      method: "POST",
-      headers: getAuthHeaders(),
-      body: formData,
-    });
+    const res = await fetch(
+      `${BASE_URL}/recipes`,
+      {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: formData,
+      }
+    );
+
     return parseResponse(res);
   },
 
-  updateRecipe: async (id, formData) => {
-    const res = await fetch(`${BASE_URL}/recipes/${id}`, {
-      method: "PATCH",
-      headers: getAuthHeaders(),
-      body: formData,
-    });
+  updateRecipe: async (
+    id,
+    formData
+  ) => {
+    const res = await fetch(
+      `${BASE_URL}/recipes/${id}`,
+      {
+        method: "PATCH",
+        headers: getAuthHeaders(),
+        body: formData,
+      }
+    );
+
     return parseResponse(res);
   },
 
   deleteRecipe: async (id) => {
-    const res = await fetch(`${BASE_URL}/recipes/${id}`, {
-      method: "DELETE",
-      headers: getAuthHeaders(),
-    });
+    const res = await fetch(
+      `${BASE_URL}/recipes/${id}`,
+      {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      }
+    );
+
     return parseResponse(res);
   },
 
-  /* =========================
-     RECIPES (ADMIN)
-  ========================= */
+  /* ======================================================
+     RECIPES ADMIN
+  ====================================================== */
+
   getPendingRecipes: async () => {
-    const res = await fetch(`${BASE_URL}/recipes/admin/pending`, {
-      headers: getAuthHeaders(),
-    });
+    const res = await fetch(
+      `${BASE_URL}/recipes/admin/pending`,
+      {
+        headers: getAuthHeaders(),
+      }
+    );
+
     return parseResponse(res);
   },
 
@@ -175,55 +291,83 @@ export const api = {
         headers: getAuthHeaders(),
       }
     );
+
     return parseResponse(res);
   },
 
-  /* =========================
-     MEDIAS (PUBLIC)
-  ========================= */
+  /* ======================================================
+     MEDIAS
+  ====================================================== */
+
   getAllMedias: async () => {
-    const res = await fetch(`${BASE_URL}/medias`);
+    const res = await fetch(
+      `${BASE_URL}/medias`
+    );
+
     return parseResponse(res);
   },
 
   getMediaById: async (id) => {
-    const res = await fetch(`${BASE_URL}/medias/${id}`);
+    const res = await fetch(
+      `${BASE_URL}/medias/${id}`
+    );
+
     return parseResponse(res);
   },
 
   createMedia: async (formData) => {
-    const res = await fetch(`${BASE_URL}/medias`, {
-      method: "POST",
-      headers: getAuthHeaders(),
-      body: formData,
-    });
+    const res = await fetch(
+      `${BASE_URL}/medias`,
+      {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: formData,
+      }
+    );
+
     return parseResponse(res);
   },
 
-  updateMedia: async (id, formData) => {
-    const res = await fetch(`${BASE_URL}/medias/${id}`, {
-      method: "PATCH",
-      headers: getAuthHeaders(),
-      body: formData,
-    });
+  updateMedia: async (
+    id,
+    formData
+  ) => {
+    const res = await fetch(
+      `${BASE_URL}/medias/${id}`,
+      {
+        method: "PATCH",
+        headers: getAuthHeaders(),
+        body: formData,
+      }
+    );
+
     return parseResponse(res);
   },
 
   deleteMedia: async (id) => {
-    const res = await fetch(`${BASE_URL}/medias/${id}`, {
-      method: "DELETE",
-      headers: getAuthHeaders(),
-    });
+    const res = await fetch(
+      `${BASE_URL}/medias/${id}`,
+      {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      }
+    );
+
     return parseResponse(res);
   },
 
-  /* =========================
-     MEDIAS (ADMIN)
-  ========================= */
+  /* ======================================================
+     MEDIAS ADMIN
+  ====================================================== */
+
   getPendingMedias: async () => {
-    const res = await fetch(`${BASE_URL}/medias/admin/pending`, {
-      headers: getAuthHeaders(),
-    });
+    const res = await fetch(
+      `${BASE_URL}/medias/admin/pending`,
+      {
+        headers: getAuthHeaders(),
+      }
+    );
+
     return parseResponse(res);
   },
 
@@ -235,72 +379,104 @@ export const api = {
         headers: getAuthHeaders(),
       }
     );
+
     return parseResponse(res);
   },
 
-  /* =========================
-     INGREDIENTS (PUBLIC)
-  ========================= */
+  /* ======================================================
+     INGREDIENTS
+  ====================================================== */
+
   getAllIngredients: async () => {
-    const res = await fetch(`${BASE_URL}/ingredients`);
+    const res = await fetch(
+      `${BASE_URL}/ingredients`
+    );
+
     return parseResponse(res);
   },
 
   getIngredientById: async (id) => {
-    const res = await fetch(`${BASE_URL}/ingredients/${id}`);
+    const res = await fetch(
+      `${BASE_URL}/ingredients/${id}`
+    );
+
     return parseResponse(res);
   },
 
-  createIngredient: async ({ name, culinary_profile }) => {
-  if (!name || !name.trim()) {
-    throw new Error("Nom de l’ingrédient obligatoire");
-  }
+  createIngredient: async ({
+    name,
+    culinary_profile,
+  }) => {
+    if (!name || !name.trim()) {
+      throw new Error(
+        "Nom de l’ingrédient obligatoire"
+      );
+    }
 
-  const payload = {
-    name: name.trim(),
-    culinary_profile: culinary_profile || "neutre",
-  };
+    const payload = {
+      name: name.trim(),
+      culinary_profile:
+        culinary_profile || "neutre",
+    };
 
-  const res = await fetch(`${BASE_URL}/ingredients`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...getAuthHeaders(),
-    },
-    body: JSON.stringify(payload),
-  });
+    const res = await fetch(
+      `${BASE_URL}/ingredients`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders(),
+        },
+        body: JSON.stringify(payload),
+      }
+    );
 
-  return parseResponse(res);
-},
+    return parseResponse(res);
+  },
 
+  updateIngredient: async (
+    id,
+    payload
+  ) => {
+    const res = await fetch(
+      `${BASE_URL}/ingredients/${id}`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders(),
+        },
+        body: JSON.stringify(payload),
+      }
+    );
 
-  updateIngredient: async (id, payload) => {
-    const res = await fetch(`${BASE_URL}/ingredients/${id}`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        ...getAuthHeaders(),
-      },
-      body: JSON.stringify(payload),
-    });
     return parseResponse(res);
   },
 
   deleteIngredient: async (id) => {
-    const res = await fetch(`${BASE_URL}/ingredients/${id}`, {
-      method: "DELETE",
-      headers: getAuthHeaders(),
-    });
+    const res = await fetch(
+      `${BASE_URL}/ingredients/${id}`,
+      {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      }
+    );
+
     return parseResponse(res);
   },
 
-  /* =========================
-     INGREDIENTS (ADMIN)
-  ========================= */
+  /* ======================================================
+     INGREDIENTS ADMIN
+  ====================================================== */
+
   getPendingIngredients: async () => {
-    const res = await fetch(`${BASE_URL}/ingredients/admin/pending`, {
-      headers: getAuthHeaders(),
-    });
+    const res = await fetch(
+      `${BASE_URL}/ingredients/admin/pending`,
+      {
+        headers: getAuthHeaders(),
+      }
+    );
+
     return parseResponse(res);
   },
 
@@ -312,6 +488,7 @@ export const api = {
         headers: getAuthHeaders(),
       }
     );
+
     return parseResponse(res);
   },
 };
