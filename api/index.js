@@ -7,6 +7,11 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 /* =========================
+   DATABASE
+========================= */
+import sequelize from './config/database.js';
+
+/* =========================
    ROUTERS
 ========================= */
 import recipeRouter from './routers/recipe.router.js';
@@ -27,16 +32,28 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 /* =========================
-   MIDDLEWARES
+   PORT
 ========================= */
-app.use(cors());
+const PORT = process.env.PORT || 3000;
+
+/* =========================
+   CORS
+========================= */
+app.use(
+  cors({
+    origin: true,
+    credentials: true,
+  }),
+);
+
+/* =========================
+   BODY PARSER
+========================= */
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 /* =========================
    STATIC IMAGES
-   Dossier réel : api/public/img
-   URL publique : /img/xxx.jpg
 ========================= */
 app.use(
   '/img',
@@ -53,6 +70,15 @@ app.use('/ingredients', ingredientRouter);
 app.use('/search', searchRouter);
 
 /* =========================
+   ROUTE TEST
+========================= */
+app.get('/', (req, res) => {
+  res.json({
+    message: '🎬 API CinéDélices en ligne',
+  });
+});
+
+/* =========================
    404 API
 ========================= */
 app.use((req, res) => {
@@ -63,10 +89,18 @@ app.use((req, res) => {
 });
 
 /* =========================
-   SERVER
+   DATABASE + SERVER
 ========================= */
-const PORT = 3000;
-app.listen(PORT, () => {
-  console.log(`🚀 API démarrée sur http://localhost:${PORT}`);
-  console.log(`🖼️ Images servies sur http://localhost:${PORT}/img`);
-});
+sequelize
+  .sync({ alter: true })
+  .then(() => {
+    console.log('✅ Base de données synchronisée');
+
+    app.listen(PORT, () => {
+      console.log(`🚀 API démarrée sur le port ${PORT}`);
+      console.log(`🖼️ Images servies sur /img`);
+    });
+  })
+  .catch((error) => {
+    console.error('❌ Erreur base de données :', error);
+  });
