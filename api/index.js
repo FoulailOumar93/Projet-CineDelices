@@ -9,7 +9,7 @@ import { fileURLToPath } from 'url';
 /* =========================
    DATABASE
 ========================= */
-import sequelize from './config/database.js';
+import { sequelize } from './models/index.js';
 
 /* =========================
    ROUTERS
