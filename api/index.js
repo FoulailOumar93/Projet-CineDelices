@@ -92,7 +92,7 @@ app.use((req, res) => {
    DATABASE + SERVER
 ========================= */
 sequelize
-  .sync({ alter: true })
+  .authenticate()
   .then(() => {
     console.log('✅ Base de données synchronisée');
 
