@@ -18,15 +18,13 @@ RecipeHasIngredient.init(
     },
 
     quantity: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.DOUBLE,
       allowNull: false,
-      defaultValue: 0,
     },
 
     unit: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      defaultValue: '',
+      type: DataTypes.STRING(25),
+      allowNull: true,
     },
   },
   {
@@ -34,6 +32,6 @@ RecipeHasIngredient.init(
     modelName: 'RecipeHasIngredient',
     tableName: 'recipe_has_ingredient',
     underscored: true,
-    timestamps: false, // 🔥 OBLIGATOIRE
+    timestamps: true,
   },
 );
