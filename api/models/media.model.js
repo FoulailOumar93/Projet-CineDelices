@@ -34,9 +34,9 @@ export const Media = sequelize.define(
 
     end_date: {
       type: DataTypes.DATE,
-      allowNull: true, // ✅ FIN DE DIFFUSION
+      allowNull: true,
     },
-    /* ✅ NOUVEAUX CHAMPS */
+
     country: {
       type: DataTypes.STRING(100),
       allowNull: true,
@@ -48,16 +48,31 @@ export const Media = sequelize.define(
     },
 
     category: {
-      type: DataTypes.ENUM('film', 'serie', 'manga', 'animation'), // ✅ FIX
+      type: DataTypes.ENUM(
+        'film',
+        'serie',
+        'manga',
+        'animation',
+      ),
       allowNull: false,
     },
 
     seasons: {
       type: DataTypes.INTEGER,
-      allowNull: true, // ✅ NOMBRE DE SAISONS
+      allowNull: true,
     },
 
     duration: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+
+    display_order: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+
+    created_by: {
       type: DataTypes.INTEGER,
       allowNull: true,
     },
@@ -95,14 +110,5 @@ export const Media = sequelize.define(
         }
       },
     },
-    display_order: {
-  type: DataTypes.INTEGER,
-  allowNull: true,
-},
-created_by: {
-  type: DataTypes.INTEGER,
-  allowNull: true,
-},
   },
-  
 );
