@@ -95,5 +95,14 @@ export const Media = sequelize.define(
         }
       },
     },
+    display_order: {
+  type: DataTypes.INTEGER,
+  allowNull: true,
+},
+created_by: {
+  type: DataTypes.INTEGER,
+  allowNull: true,
+},
   },
+  
 );
