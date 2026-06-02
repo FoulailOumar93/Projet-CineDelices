@@ -50,7 +50,7 @@ export const Media = sequelize.define(
     category: {
       type: DataTypes.ENUM(
         'film',
-        'serie',
+        'série',
         'manga',
         'animation',
       ),
