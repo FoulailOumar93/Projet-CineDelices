@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict p4Hl9GOOJcBgRNhveVjlljp0lmZRJNV1QItAXiDO8pRkEad2YREOCk0fnNcX8HS
+
 
 -- Dumped from database version 18.1 (Ubuntu 18.1-1.pgdg24.04+2)
 -- Dumped by pg_dump version 18.1 (Ubuntu 18.1-1.pgdg24.04+2)
@@ -984,5 +984,5 @@ ALTER TABLE ONLY public.recipes
 -- PostgreSQL database dump complete
 --
 
-\unrestrict p4Hl9GOOJcBgRNhveVjlljp0lmZRJNV1QItAXiDO8pRkEad2YREOCk0fnNcX8HS
+
 
