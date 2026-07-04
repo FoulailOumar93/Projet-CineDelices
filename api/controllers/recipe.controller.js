@@ -35,29 +35,32 @@ export const recipeController = {
     }
   },
 
-  /* =========================
-     GET ONE (PUBLIC)
-  ========================= */
-  async getOne(req, res, next) {
+/* =========================
+   GET ONE (PUBLIC)
+========================= */
+async getOne(req, res, next) {
   try {
-    const [rows] = await sequelize.query(`
-  SELECT *
-  FROM recipe_seen_in
-  WHERE recipe_id = ${req.params.id}
-`);
-
-console.log(rows);
     const recipe = await Recipe.findByPk(req.params.id, {
       include: [
+        {
+          model: Ingredient,
+          as: "ingredients",
+          through: {
+            attributes: ["quantity", "unit"],
+          },
+        },
         {
           model: Media,
           as: "seen_in_medias",
         },
       ],
-      logging: console.log,
     });
 
-    console.log(JSON.stringify(recipe, null, 2));
+    if (!recipe) {
+      return res
+        .status(httpStatusCodes.NOT_FOUND)
+        .json({ error: "Recette introuvable" });
+    }
 
     return res.json(recipe);
   } catch (e) {
