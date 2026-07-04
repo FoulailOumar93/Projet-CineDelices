@@ -93,27 +93,20 @@ app.use((req, res) => {
 ========================= */
 sequelize
   .sync({ alter: true })
-  .then(() => {
-    console.log('✅ Base de données synchronisée');
+  .then(async () => {
+    console.log("✅ Base de données synchronisée");
+
+    const [rows] = await sequelize.query(`
+      SELECT current_database() AS db,
+             current_user AS user;
+    `);
+
+    console.log(rows);
 
     app.listen(PORT, () => {
       console.log(`🚀 API démarrée sur le port ${PORT}`);
-      console.log(`🖼️ Images servies sur /img`);
     });
   })
   .catch((error) => {
-    console.error('❌ Erreur base de données :', error);
-  });
-  sequelize
-  .sync({ alter: true })
-  .then(() => {
-    console.log('✅ Base de données synchronisée');
-
-    app.listen(PORT, () => {
-      console.log(`🚀 API démarrée sur le port ${PORT}`);
-      console.log(`🖼️ Images servies sur /img`);
-    });
-  })
-  .catch((error) => {
-    console.error('❌ Erreur base de données :', error);
+    console.error(error);
   });

@@ -176,11 +176,16 @@ export default function AddRecipe({ open, onClose, onRecipeAdded }) {
      MEDIAS
   ===================== */
   const toggleMedia = (id) => {
-    setSelectedMedias((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
-  };
+  setSelectedMedias((prev) => {
+    const next = prev.includes(id)
+      ? prev.filter((x) => x !== id)
+      : [...prev, id];
 
+    console.log("selectedMedias =", next);
+
+    return next;
+  });
+};
   /* =====================
      SUBMIT
   ===================== */

@@ -2,7 +2,12 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-import { Recipe, Ingredient, Media } from '../models/index.js';
+import {
+  sequelize,
+  Recipe,
+  Ingredient,
+  Media,
+} from '../models/index.js';
 import { httpStatusCodes } from '../errors/http.errors.js';
 
 /* =========================
@@ -34,35 +39,31 @@ export const recipeController = {
      GET ONE (PUBLIC)
   ========================= */
   async getOne(req, res, next) {
-    try {
-      const recipe = await Recipe.findByPk(req.params.id, {
-        include: [
-          {
-            model: Ingredient,
-            as: 'ingredients',
-            attributes: ['id', 'name'],
-            through: { attributes: ['quantity', 'unit'] },
-          },
-          {
-            model: Media,
-            as: 'seen_in_medias',
-            attributes: ['id', 'title', 'img_url', 'category'],
-            through: { attributes: [] },
-          },
-        ],
-      });
+  try {
+    const [rows] = await sequelize.query(`
+  SELECT *
+  FROM recipe_seen_in
+  WHERE recipe_id = ${req.params.id}
+`);
 
-      if (!recipe) {
-        return res
-          .status(httpStatusCodes.NOT_FOUND)
-          .json({ error: 'Recette introuvable' });
-      }
+console.log(rows);
+    const recipe = await Recipe.findByPk(req.params.id, {
+      include: [
+        {
+          model: Media,
+          as: "seen_in_medias",
+        },
+      ],
+      logging: console.log,
+    });
 
-      return res.status(httpStatusCodes.OK).json(recipe);
-    } catch (e) {
-      next(e);
-    }
-  },
+    console.log(JSON.stringify(recipe, null, 2));
+
+    return res.json(recipe);
+  } catch (e) {
+    next(e);
+  }
+},
 
   /* =========================
      GET PENDING (ADMIN)
@@ -124,6 +125,10 @@ export const recipeController = {
         ingredients,
         medias_ids,
       } = req.body;
+
+      console.log(req.body);
+      console.log("ingredients =", ingredients);
+      console.log("medias_ids =", medias_ids);
 
       if (!title || !instructions) {
         return res
@@ -239,19 +244,23 @@ export const recipeController = {
           typeof ingredients === 'string'
             ? JSON.parse(ingredients)
             : ingredients;
-
+console.log("Avant setIngredients");
         await recipe.setIngredients([]);
 
-        for (const row of parsed) {
-          await recipe.addIngredient(Number(row.ingredient_id), {
-            through: {
-              quantity: Number(row.quantity ?? 0),
-              unit: String(row.unit ?? ''),
-            },
-          });
-        }
-      }
+       for (const row of parsed) {
+  console.log("Ajout :", row);
 
+  await recipe.addIngredient(Number(row.ingredient_id), {
+    through: {
+      quantity: Number(row.quantity ?? 0),
+      unit: String(row.unit ?? ""),
+    },
+  });
+
+  console.log("Ajout terminé");
+}
+      }
+console.log("Après setIngredients");
       /* MEDIAS */
       if (medias_ids !== undefined) {
         const ids =
