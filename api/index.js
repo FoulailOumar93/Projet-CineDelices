@@ -63,11 +63,11 @@ app.use(
 /* =========================
    ROUTES API
 ========================= */
-app.use('/recipes', recipeRouter);
-app.use('/users', userRouter);
-app.use('/medias', mediaRouter);
-app.use('/ingredients', ingredientRouter);
-app.use('/search', searchRouter);
+app.use('/api/recipes', recipeRouter);
+app.use('/api/users', userRouter);
+app.use('/api/medias', mediaRouter);
+app.use('/api/ingredients', ingredientRouter);
+app.use('/api/search', searchRouter);
 
 /* =========================
    ROUTE TEST
