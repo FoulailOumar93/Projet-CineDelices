@@ -63,11 +63,12 @@ app.use(
 /* =========================
    ROUTES API
 ========================= */
-app.use('/api/recipes', recipeRouter);
-app.use('/api/users', userRouter);
-app.use('/api/medias', mediaRouter);
-app.use('/api/ingredients', ingredientRouter);
-app.use('/api/search', searchRouter);
+
+app.use('/recipes', recipeRouter);
+app.use('/users', userRouter);
+app.use('/medias', mediaRouter);
+app.use('/ingredients', ingredientRouter);
+app.use('/search', searchRouter);
 
 /* =========================
    ROUTE TEST
@@ -102,7 +103,12 @@ sequelize
     `);
 
     console.log(rows);
-
+    console.log("ROUTES CHARGÉES");
+    console.log("/recipes");
+    console.log("/users");
+    console.log("/medias");
+    console.log("/ingredients");
+    console.log("/search");
     app.listen(PORT, () => {
       console.log(`🚀 API démarrée sur le port ${PORT}`);
     });
