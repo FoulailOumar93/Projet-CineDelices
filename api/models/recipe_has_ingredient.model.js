@@ -1,3 +1,4 @@
+
 import { Model, DataTypes } from 'sequelize';
 import { sequelize } from '../sequelize.client.js';
 
@@ -24,6 +25,12 @@ RecipeHasIngredient.init(
 
     unit: {
       type: DataTypes.STRING(25),
+      allowNull: true,
+    },
+
+    // Ordre d'affichage de l'ingrédient
+    position: {
+      type: DataTypes.INTEGER,
       allowNull: true,
     },
   },

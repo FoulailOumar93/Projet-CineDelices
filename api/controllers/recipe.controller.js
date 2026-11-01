@@ -1,3 +1,4 @@
+
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -8,6 +9,7 @@ import {
   Ingredient,
   Media,
 } from '../models/index.js';
+
 import { httpStatusCodes } from '../errors/http.errors.js';
 
 /* =========================
@@ -35,38 +37,58 @@ export const recipeController = {
     }
   },
 
-/* =========================
-   GET ONE (PUBLIC)
-========================= */
-async getOne(req, res, next) {
-  try {
-    const recipe = await Recipe.findByPk(req.params.id, {
-      include: [
-        {
-          model: Ingredient,
-          as: "ingredients",
-          through: {
-            attributes: ["quantity", "unit"],
+  /* =========================
+     GET ONE (PUBLIC)
+     INGREDIENTS ORDERED
+  ========================= */
+  async getOne(req, res, next) {
+    try {
+      const recipe = await Recipe.findByPk(req.params.id, {
+        include: [
+          {
+            model: Ingredient,
+            as: 'ingredients',
+            through: {
+              attributes: [
+                'quantity',
+                'unit',
+                'position',
+              ],
+            },
           },
-        },
-        {
-          model: Media,
-          as: "seen_in_medias",
-        },
-      ],
-    });
+          {
+            model: Media,
+            as: 'seen_in_medias',
+          },
+        ],
+      });
 
-    if (!recipe) {
-      return res
-        .status(httpStatusCodes.NOT_FOUND)
-        .json({ error: "Recette introuvable" });
+      if (!recipe) {
+        return res
+          .status(httpStatusCodes.NOT_FOUND)
+          .json({ error: 'Recette introuvable' });
+      }
+
+      const result = recipe.toJSON();
+
+      // Trier les ingrédients selon leur position
+      result.ingredients.sort((a, b) => {
+        const positionA =
+          a.RecipeHasIngredient?.position ??
+          Number.MAX_SAFE_INTEGER;
+
+        const positionB =
+          b.RecipeHasIngredient?.position ??
+          Number.MAX_SAFE_INTEGER;
+
+        return positionA - positionB;
+      });
+
+      return res.status(httpStatusCodes.OK).json(result);
+    } catch (e) {
+      next(e);
     }
-
-    return res.json(recipe);
-  } catch (e) {
-    next(e);
-  }
-},
+  },
 
   /* =========================
      GET PENDING (ADMIN)
@@ -106,6 +128,7 @@ async getOne(req, res, next) {
 
       recipe.is_validated = true;
       recipe.validated_by = req.user.id;
+
       await recipe.save();
 
       return res.status(httpStatusCodes.OK).json(recipe);
@@ -129,10 +152,6 @@ async getOne(req, res, next) {
         medias_ids,
       } = req.body;
 
-      console.log(req.body);
-      console.log("ingredients =", ingredients);
-      console.log("medias_ids =", medias_ids);
-
       if (!title || !instructions) {
         return res
           .status(httpStatusCodes.BAD_REQUEST)
@@ -147,6 +166,7 @@ async getOne(req, res, next) {
           .toString('utf8');
 
         const filePath = path.join(IMG_DIR, safeFilename);
+
         fs.writeFileSync(filePath, req.file.buffer);
 
         filename = safeFilename;
@@ -163,7 +183,7 @@ async getOne(req, res, next) {
         validated_by: req.user.id,
       });
 
-      /* INGREDIENTS */
+      /* INGREDIENTS + POSITION */
       if (ingredients) {
         const parsed =
           typeof ingredients === 'string'
@@ -172,13 +192,17 @@ async getOne(req, res, next) {
 
         await recipe.setIngredients([]);
 
-        for (const row of parsed) {
-          await recipe.addIngredient(Number(row.ingredient_id), {
-            through: {
-              quantity: Number(row.quantity ?? 0),
-              unit: String(row.unit ?? ''),
-            },
-          });
+        for (const [position, row] of parsed.entries()) {
+          await recipe.addIngredient(
+            Number(row.ingredient_id),
+            {
+              through: {
+                quantity: Number(row.quantity ?? 0),
+                unit: String(row.unit ?? ''),
+                position,
+              },
+            }
+          );
         }
       }
 
@@ -192,7 +216,9 @@ async getOne(req, res, next) {
         await recipe.setSeen_in_medias(ids);
       }
 
-      return res.status(httpStatusCodes.CREATED).json(recipe);
+      return res
+        .status(httpStatusCodes.CREATED)
+        .json(recipe);
     } catch (e) {
       next(e);
     }
@@ -221,12 +247,27 @@ async getOne(req, res, next) {
         medias_ids,
       } = req.body;
 
-      if (title !== undefined) recipe.title = title;
-      if (instructions !== undefined) recipe.instructions = instructions;
-      if (category !== undefined) recipe.category = category;
-      if (time !== undefined) recipe.time = time ? Number(time) : null;
-      if (difficulty !== undefined)
-        recipe.difficulty = difficulty ? Number(difficulty) : null;
+      if (title !== undefined) {
+        recipe.title = title;
+      }
+
+      if (instructions !== undefined) {
+        recipe.instructions = instructions;
+      }
+
+      if (category !== undefined) {
+        recipe.category = category;
+      }
+
+      if (time !== undefined) {
+        recipe.time = time ? Number(time) : null;
+      }
+
+      if (difficulty !== undefined) {
+        recipe.difficulty = difficulty
+          ? Number(difficulty)
+          : null;
+      }
 
       if (req.file) {
         const safeFilename = Buffer
@@ -234,6 +275,7 @@ async getOne(req, res, next) {
           .toString('utf8');
 
         const filePath = path.join(IMG_DIR, safeFilename);
+
         fs.writeFileSync(filePath, req.file.buffer);
 
         recipe.img_url = safeFilename;
@@ -241,29 +283,29 @@ async getOne(req, res, next) {
 
       await recipe.save();
 
-      /* INGREDIENTS */
+      /* INGREDIENTS + POSITION */
       if (ingredients !== undefined) {
         const parsed =
           typeof ingredients === 'string'
             ? JSON.parse(ingredients)
             : ingredients;
-console.log("Avant setIngredients");
+
         await recipe.setIngredients([]);
 
-       for (const row of parsed) {
-  console.log("Ajout :", row);
-
-  await recipe.addIngredient(Number(row.ingredient_id), {
-    through: {
-      quantity: Number(row.quantity ?? 0),
-      unit: String(row.unit ?? ""),
-    },
-  });
-
-  console.log("Ajout terminé");
-}
+        for (const [position, row] of parsed.entries()) {
+          await recipe.addIngredient(
+            Number(row.ingredient_id),
+            {
+              through: {
+                quantity: Number(row.quantity ?? 0),
+                unit: String(row.unit ?? ''),
+                position,
+              },
+            }
+          );
+        }
       }
-console.log("Après setIngredients");
+
       /* MEDIAS */
       if (medias_ids !== undefined) {
         const ids =
@@ -294,6 +336,7 @@ console.log("Après setIngredients");
       }
 
       await recipe.destroy();
+
       return res.sendStatus(httpStatusCodes.NO_CONTENT);
     } catch (e) {
       next(e);
