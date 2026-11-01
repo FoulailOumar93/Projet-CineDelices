@@ -8,7 +8,7 @@ export const mediaCreateSchema = Joi.object({
       'string.empty': 'Le titre est obligatoire',
       'string.max': 'Le titre ne peut pas dépasser 50 caractères',
     }),
-    
+
   description: Joi.string()
     .required()
     .messages({
@@ -19,25 +19,24 @@ export const mediaCreateSchema = Joi.object({
     .uri()
     .optional()
     .messages({
-      'string.uri': 'L\'URL de l\'image doit être valide',
+      'string.uri': "L'URL de l'image doit être valide",
     }),
 
-  release_date: Joi.date().allow(null)
+  release_date: Joi.date()
+    .allow(null)
     .optional()
     .messages({
       'date.base': 'La date de sortie doit être une date valide',
     }),
 
   category: Joi.string()
-    .valid('film', 'série', 'manga')
+    .valid('film', 'série', 'manga', 'animation')
     .required()
     .messages({
-      'any.only': 'La catégorie doit être \'film\', \'série\' ou \'manga\'',
+      'any.only':
+        "La catégorie doit être 'film', 'série', 'manga' ou 'animation'",
       'string.empty': 'La catégorie est obligatoire',
     }),
-
-  is_validated: Joi.boolean()
-    .optional(),
 });
 
 export const mediaUpdateSchema = Joi.object({
@@ -47,30 +46,29 @@ export const mediaUpdateSchema = Joi.object({
     .messages({
       'string.max': 'Le titre ne peut pas dépasser 50 caractères',
     }),
-    
+
   description: Joi.string()
     .optional(),
 
   release_date: Joi.date()
+    .allow(null)
     .optional()
     .messages({
       'date.base': 'La date de sortie doit être une date valide',
     }),
 
   category: Joi.string()
-    .valid('film', 'série', 'manga')
+    .valid('film', 'série', 'manga', 'animation')
     .optional()
     .messages({
-      'any.only': 'La catégorie doit être \'film\', \'série\' ou \'manga\'',
+      'any.only':
+        "La catégorie doit être 'film', 'série', 'manga' ou 'animation'",
     }),
-  
-  is_validated: Joi.boolean()
-    .optional(),
-
 });
 
-// media-in-recipe.schema.js
-
 export const mediaInRecipeSchema = Joi.object({
-  id: Joi.number().integer().positive(),  // only need the ID to link
+  id: Joi.number()
+    .integer()
+    .positive()
+    .required(),
 });

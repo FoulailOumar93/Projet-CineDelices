@@ -84,28 +84,37 @@ export const ingredientController = {
   /* =========================
      CREATE (AUTH)
   ========================= */
-  async create(req, res, next) {
-    try {
-      const { name, culinary_profile } = req.body;
+  
+async create(req, res, next) {
+  try {
+    const { name, culinary_profile } = req.body;
 
-      if (!name) {
-        return res
-          .status(httpStatusCodes.BAD_REQUEST)
-          .json({ error: 'Nom requis' });
-      }
-
-      const ingredient = await Ingredient.create({
-        name,
-        culinary_profile: culinary_profile || 'neutre',
-        is_validated: req.user?.role === 'admin',
-        validated_by: req.user?.role === 'admin' ? req.user.id : null,
-      });
-
-      return res.status(httpStatusCodes.CREATED).json(ingredient);
-    } catch (e) {
-      next(e);
+    if (!name) {
+      return res
+        .status(httpStatusCodes.BAD_REQUEST)
+        .json({ error: 'Nom requis' });
     }
-  },
+
+    const ingredient = await Ingredient.create({
+      name,
+      culinary_profile: culinary_profile || 'neutre',
+      is_validated: req.user?.role === 'admin',
+      validated_by: req.user?.role === 'admin' ? req.user.id : null,
+    });
+
+    return res.status(httpStatusCodes.CREATED).json(ingredient);
+  } catch (e) {
+    console.error("❌ ERREUR CRÉATION INGRÉDIENT", {
+      name: e.name,
+      message: e.message,
+      code: e.parent?.code,
+      detail: e.parent?.detail,
+      constraint: e.parent?.constraint,
+    });
+
+    next(e);
+  }
+},
 
   /* =========================
      UPDATE (AUTH)
